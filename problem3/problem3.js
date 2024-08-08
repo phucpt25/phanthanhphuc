@@ -1,0 +1,107 @@
+
+  interface WalletBalance {
+    currency: string;
+    amount: number;
+    blockchain: string; // Added blockchain field
+  }
+  
+  interface FormattedWalletBalance extends WalletBalance {
+    formatted: string;
+  }
+//   Added blockchain to WalletBalance interface to match its usage in the getPriority function.
+//   Extended FormattedWalletBalance to include the formatted field.
+
+
+  interface Props extends BoxProps {}
+
+  const WalletPage: React.FC<Props> = (props: Props) => {
+    const { ...rest } = props;
+    const balances = useWalletBalances();
+    const prices = usePrices();
+    
+    // Define a blockchains
+    const blockchains = {
+        Osmosis: 100,
+        Ethereum: 50,
+        Arbitrum: 30,
+        Zilliqa: 20,
+        Neo: 20,
+    }
+    const getPriority = (blockchain: string): number => blockchains[blockchain] || -99;
+    // Same logic but now it look cleaner and easier understand
+
+    // Old logic for refer purpose
+    // const getPriority = (blockchain: any): number => {
+    //     switch (blockchain) {
+    //         case 'Osmosis':
+    //         return 100
+    //         case 'Ethereum':
+    //         return 50
+    //         case 'Arbitrum':
+    //         return 30
+    //         case 'Zilliqa':
+    //         return 20
+    //         case 'Neo':
+    //         return 20
+    //         default:
+    //         return -99
+    //     }
+    // }
+    
+    const sortedBalances = useMemo(() => {
+        balances
+        .filter((balance: WalletBalance) => balance.amount > 0)
+        .sort((lhs: WalletBalance, rhs: WalletBalance) => {
+            this.getPriority(lhs.blockchain) - this.getPriority(rhs.blockchain);
+        })
+    }, [balances, prices]);
+    // Remove unnecessary checks
+
+    // Old logic for refer purpose
+    // const sortedBalances = useMemo(() => {
+    //   return balances.filter((balance: WalletBalance) => {
+    //         const balancePriority = getPriority(balance.blockchain);
+    //         if (lhsPriority > -99) {
+    //            if (balance.amount <= 0) {
+    //              return true;
+    //            }
+    //         }
+    //         return false
+    //       }).sort((lhs: WalletBalance, rhs: WalletBalance) => {
+    //           const leftPriority = getPriority(lhs.blockchain);
+    //         const rightPriority = getPriority(rhs.blockchain);
+    //         if (leftPriority > rightPriority) {
+    //           return -1;
+    //         } else if (rightPriority > leftPriority) {
+    //           return 1;
+    //         }
+    //   });
+    // }, [balances, prices]);
+  
+    const formattedBalances = sortedBalances.map((balance: WalletBalance) => {
+      return {
+        ...balance,
+        formatted: balance.amount.toFixed()
+      }
+    })
+  
+    const rows = sortedBalances.map((balance: FormattedWalletBalance, index: number) => {
+      const usdValue = prices[balance.currency] * balance.amount;
+      return (
+        <WalletRow 
+          className={classes.row}
+          key={index}
+          amount={balance.amount}
+          usdValue={usdValue}
+          formattedAmount={balance.formatted}
+        />
+      )
+    })
+  
+    return (
+      <div {...rest}>
+        {rows}
+      </div>
+    )
+  }
+  
